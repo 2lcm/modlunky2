@@ -205,10 +205,11 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         self.rowconfigure(0, weight=1)
 
         self.title(title)
+        self.overrideredirect(True)
 
         self.menu = tk.Menu(self, tearoff=False)
         self.menu.add_command(label="Close", command=self.destroy)
-        self.bind("<Button-3>", self.do_context_menu)
+        # self.bind("<Button-3>", self.do_context_menu)
 
         self.focus_force()
         self.lift()
@@ -217,6 +218,8 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
         self._offsety = 0
         self.bind("<Button-1>", self.clickwin)
         self.bind("<B1-Motion>", self.dragwin)
+
+        self.bind("<Double-Button-3>", self.destroy_event)
 
         font = tk.font.Font(
             family=self.font_family,
@@ -305,6 +308,9 @@ class TrackerWindow(tk.Toplevel, Generic[ConfigType]):
 
     def update_config(self, config: ConfigType) -> None:
         self.send_queue.put(Message(Command.CONFIG, config.clone()))
+
+    def destroy_event(self, _event):
+        self.destroy()
 
     def destroy(self):
         if self.watcher_thread and self.watcher_thread.is_alive():

@@ -7,6 +7,9 @@ from PIL import Image, ImageTk
 from modlunky2.config import CategoryTrackerConfig, Config, SaveableCategory
 from modlunky2.constants import BASE_DIR
 from modlunky2.mem import Spel2Process
+from modlunky2.mem.state import WinState
+
+import winsound
 
 from modlunky2.ui.trackers.common import (
     Tracker,
@@ -159,6 +162,10 @@ class CategoryTracker(Tracker[CategoryTrackerConfig, WindowData]):
         self.proc = None
         self.time_total = None
         self.run_state = None
+        self.before = False
+        self.num = 0
+        self.start = False
+        self.sound_path = str(BASE_DIR / "static/sounds/low_fail.wav")
 
     def initialize(self):
         self.time_total = 0
@@ -177,4 +184,17 @@ class CategoryTracker(Tracker[CategoryTrackerConfig, WindowData]):
 
         self.run_state.update(game_state)
         label = self.run_state.get_display(game_state.screen, config)
-        return WindowData(label)
+
+        world = game_state.world
+        level = game_state.level
+        if (world == game_state.world_start
+            and level == game_state.level_start
+            and game_state.win_state is WinState.NO_WIN
+            and self.run_state.level_started
+        ):
+            self.num += 1
+
+        if self.num > 0 and not self.run_state.is_low_percent and self.before != self.run_state.is_low_percent:
+            winsound.PlaySound(self.sound_path, winsound.SND_FILENAME)
+        self.before = self.run_state.is_low_percent
+        return WindowData(f"Try : {self.num} {label}")
